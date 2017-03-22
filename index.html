@@ -1,0 +1,102 @@
+<!DOCTYPE html>
+<html lang="en" ng-app="appModule">
+<head>
+    <meta charset="UTF-8">
+    <title>BookStore</title>
+    <link rel="stylesheet" href="./node_modules/bootstrap/dist/css/bootstrap.css">
+</head>
+<body>
+<nav class="navbar navbar-inverse">
+    <div class="container-fluid">
+        <!-- Brand and toggle get grouped for better mobile display -->
+        <div class="navbar-header">
+            <a class="navbar-brand" href="#">Bookstore</a>
+        </div>
+
+        <!-- Collect the nav links, forms, and other content for toggling -->
+        <div class="collapse navbar-collapse" id="bs-example-navbar-collapse-1">
+            <ul class="nav navbar-nav">
+                <li class="active"><a href="#!/">首页 <span class="sr-only">(current)</span></a></li>
+                <li><a href="#!/list">图书列表</a></li>
+                <li><a href="#!/add">添加图书</a></li>
+            </ul>
+            <form class="navbar-form navbar-right">
+                <div class="form-group">
+                    <input type="text" class="form-control" ng-model="keywork" placeholder="Search">
+                </div>
+                <button type="submit" class="btn btn-danger"  ng-click="search()">搜索</button>
+            </form>
+        </div><!-- /.navbar-collapse -->
+    </div><!-- /.container-fluid -->
+</nav>
+<div class="container">
+    <div ng-view></div>
+</div>
+
+<script src="./node_modules/angular/angular.js"></script>
+<script src="./node_modules/angular-resource/angular-resource.js"></script>
+<script src="./node_modules/angular-route/angular-route.js"></script>
+<script>
+    var app=angular.module('appModule',['ngResource','ngRoute']);
+    app.config(function ($routeProvider) {
+        $routeProvider.when('/',{
+            templateUrl:'tmpl/home.html',
+
+        }).when('/list',{
+            templateUrl:'tmpl/list.html',
+            controller:'listCtrl'
+        }).when('/add',{
+            templateUrl:'tmpl/add.html',
+            controller:'addCtrl'
+        }).when('/detail/:bid',{
+            templateUrl:'tmpl/detail.html',
+            controller:'detailCtrl'
+        }).otherwise('/')
+    });
+    app.factory('Books',function ($resource) {
+        return $resource('/book/:id',null,{
+            update:{
+                method:'PUT'
+            }
+        })
+    });
+
+
+
+    app.controller('listCtrl',function ($scope,Books) {
+        $scope.books=Books.query();
+    });
+    app.controller('addCtrl',function ($scope,Books,$location) {
+        $scope.add=function () {
+            Books.save($scope.bk).$promise.then(function () {
+                $location.path('list')
+            })
+        }
+    });
+    app.controller('detailCtrl',function ($scope,Books,$routeParams,$location) {
+        $scope.id=$routeParams.bid;
+        $scope.book=Books.get({id:$scope.id});
+        $scope.flag=true;
+        $scope.changeState=function () {
+            $scope.tmpl=JSON.parse(JSON.stringify($scope.book));
+            $scope.flag=false;
+        };
+        $scope.cancel=function () {
+            $scope.flag=true;
+        };
+        $scope.remove=function () {
+            Books.remove({id:$scope.id}).$promise.then(function () {
+                $location.path('list');
+            })
+        };
+        $scope.update=function () {
+            Books.update({id:$scope.id},$scope.tmpl).$promise.then(function (data) {
+                $scope.book=data;
+                $scope.flag=true;
+            })
+        };
+    });
+
+</script>
+</body>
+</html>
